@@ -3,6 +3,7 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createNote } from "@/lib/api";
 import { useNoteStore } from "@/lib/store/noteStore";
 import type { NoteTag } from "@/types/note";
@@ -24,27 +25,26 @@ interface FormValues {
 
 export default function NoteForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { draft, setDraft, clearDraft } = useNoteStore();
 
-  const handleSubmit = async (values: FormValues) => {
-    try {
-      await createNote(values);
+  const mutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
       clearDraft();
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
       router.back();
-    } catch (err) {
-      console.error("Failed to create note:", err);
-    }
-  };
+    },
+  });
 
   return (
     <Formik<FormValues>
       initialValues={draft}
       validationSchema={validationSchema}
-      onSubmit={handleSubmit}
+      onSubmit={(values) => mutation.mutate(values)}
       enableReinitialize
     >
       {({ values, isSubmitting }) => {
-        // Автозбереження у Zustand при зміні values
         setDraft(values);
 
         return (
@@ -90,9 +90,9 @@ export default function NoteForm() {
               <button
                 type="submit"
                 className={css.submitButton}
-                disabled={isSubmitting}
+                disabled={isSubmitting || mutation.isPending}
               >
-                Create note
+                {mutation.isPending ? "Creating..." : "Create note"}
               </button>
             </div>
           </Form>

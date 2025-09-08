@@ -18,6 +18,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: note.content.slice(0, 150),
       url: absoluteUrl(`/notes/${params.id}`),
       type: "article",
+      images: [
+        {
+          url: "https://www.5.ua/media/pictures/820x546/205549.jpg",
+          width: 1200,
+          height: 630,
+          alt: note.title,
+        },
+      ],
     },
   };
 }

@@ -11,6 +11,14 @@ export const metadata: Metadata = {
     description: "Add a new note in NoteHub",
     url: absoluteUrl("/notes/action/create"),
     type: "website",
+    images: [
+      {
+        url: "https://www.5.ua/media/pictures/820x546/205549.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Create Note",
+      },
+    ],
   },
 };
 

@@ -7,7 +7,7 @@ interface Props {
   searchParams: { page?: string; q?: string };
 }
 
-export function generateMetadata({ params }: Props): Metadata {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tag = params.slug?.[0] ?? "All";
 
   return {
