@@ -9,8 +9,7 @@ import Pagination from "@/components/Pagination/Pagination";
 import SearchBox from "@/components/SearchBox/SearchBox";
 import Loader from "@/components/Loader/Loader";
 import ErrorMessage from "@/components/ErrorMessage/ErrorMessage";
-import Modal from "@/components/Modal/Modal";
-import NoteForm from "@/components/NoteForm/NoteForm";
+import Link from "next/link";
 import css from "./Notes.client.module.css";
 
 interface Props {
@@ -20,14 +19,14 @@ interface Props {
 export default function NotesClient({ tag }: Props) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const perPage = 12;
 
   const [debouncedSearch] = useDebounce(search, 500);
 
   const { data, isLoading, isError, isFetching } = useQuery<FetchNotesResponse, Error>({
     queryKey: ["notes", tag ?? "All", page, debouncedSearch ?? ""],
-    queryFn: () => fetchNotes(page, perPage, tag === "All" ? undefined : tag, debouncedSearch),
+    queryFn: () =>
+      fetchNotes(page, perPage, tag === "All" ? undefined : tag, debouncedSearch),
     staleTime: 5000,
     placeholderData: keepPreviousData,
   });
@@ -46,21 +45,17 @@ export default function NotesClient({ tag }: Props) {
     <div className={css.container}>
       <header className={css.toolbar}>
         <SearchBox value={search} onChange={handleSearchChange} />
-        {totalPages > 1 && <Pagination page={page} pageCount={totalPages} onChange={setPage} />}
-        <button className={css.button} onClick={() => setIsModalOpen(true)}>
+        {totalPages > 1 && (
+          <Pagination page={page} pageCount={totalPages} onChange={setPage} />
+        )}
+        <Link href="/notes/action/create" className={css.button}>
           Create note +
-        </button>
+        </Link>
       </header>
 
       {showLoader && <Loader />}
       {isError && <ErrorMessage />}
       {!isLoading && !isError && notes.length > 0 && <NoteList notes={notes} />}
-
-      {isModalOpen && (
-        <Modal onClose={() => setIsModalOpen(false)}>
-          <NoteForm onClose={() => setIsModalOpen(false)} />
-        </Modal>
-      )}
     </div>
   );
 }

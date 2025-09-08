@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useDebounce } from "use-debounce";
 import css from "./SearchBox.module.css";
@@ -13,7 +15,12 @@ export default function SearchBox({ value, onChange }: SearchBoxProps) {
 
   useEffect(() => {
     onChange(debounced);
-  }, [debounced, onChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debounced]);
+
+  useEffect(() => {
+    setInput(value);
+  }, [value]);
 
   return (
     <input

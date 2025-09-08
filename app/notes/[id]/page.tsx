@@ -1,29 +1,27 @@
-"use client";
-
-import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
 import { fetchNoteById } from "@/lib/api";
-import { useParams } from "next/navigation";  
-import NoteDetailsClient from "./NoteDetails.client";
+import NoteDetails from "./NoteDetails.client";
+import { absoluteUrl } from "@/utils/url";
 
-export default function NoteDetailsPage() {
-  const { id } = useParams();  
+interface Props {
+  params: { id: string };
+}
 
-  const noteId = Array.isArray(id) ? id[0] : id;  
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const note = await fetchNoteById(params.id);
 
-  if (!noteId) {
-    throw new Error("Invalid note id");
-  }
+  return {
+    title: note.title,
+    description: note.content.slice(0, 150),
+    openGraph: {
+      title: note.title,
+      description: note.content.slice(0, 150),
+      url: absoluteUrl(`/notes/${params.id}`),
+      type: "article",
+    },
+  };
+}
 
-  const queryClient = new QueryClient();
-
-  queryClient.prefetchQuery({
-    queryKey: ["note", noteId],
-    queryFn: () => fetchNoteById(noteId),
-  });
-
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <NoteDetailsClient id={noteId} /> 
-    </HydrationBoundary>
-  );
+export default async function NotePage({ params }: Props) {
+  return <NoteDetails id={params.id} />;
 }

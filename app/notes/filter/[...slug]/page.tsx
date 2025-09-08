@@ -1,23 +1,28 @@
-import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
-import { fetchNotes } from "@/lib/api";
+import type { Metadata } from "next";
 import NotesClient from "./Notes.client";
+import { absoluteUrl } from "@/utils/url";
 
-export default async function NotesFilterPage({ params, }: { params: Promise<{ slug?: string[] }>; }) {
-  
-  const { slug } = await params;
+interface Props {
+  params: { slug?: string[] };
+  searchParams: { page?: string; q?: string };
+}
 
-  const tag = Array.isArray(slug) && slug.length ? slug[0] : "All";
+export function generateMetadata({ params }: Props): Metadata {
+  const tag = params.slug?.[0] ?? "All";
 
-  const queryClient = new QueryClient();
-  await queryClient.prefetchQuery({
-    queryKey: ["notes", tag, 1, ""],
-    queryFn: () => fetchNotes(1, 12, tag === "All" ? "" : tag),
-  });
+  return {
+    title: `Notes — ${tag}`,
+    description: `Browse ${tag} notes in NoteHub`,
+    openGraph: {
+      title: `Notes — ${tag}`,
+      description: `Browse ${tag} notes in NoteHub`,
+      url: absoluteUrl(`/notes/filter/${tag}`),
+      type: "website",
+    },
+  };
+}
 
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <h1>Notes — {tag}</h1>
-      <NotesClient tag={tag} />
-    </HydrationBoundary>
-  );
+export default function FilterPage({ params }: Props) {
+  const tag = params.slug?.[0] ?? "All";
+  return <NotesClient tag={tag} />;
 }
