@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
-import { Formik, Form, Field, ErrorMessage, useFormikContext } from "formik";
+import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createNote } from "@/lib/api";
 import { useNoteStore } from "@/lib/store/noteStore";
 import type { NoteTag } from "@/types/note";
+import { useEffect } from "react";
 import css from "./NoteForm.module.css";
 
 const validationSchema = Yup.object({
@@ -24,15 +24,14 @@ interface FormValues {
   tag: NoteTag;
 }
 
-function DraftUpdater() {
-  const { values } = useFormikContext<FormValues>();
+function DraftUpdater({ values }: { values: FormValues }) {
   const { setDraft } = useNoteStore();
 
   useEffect(() => {
     setDraft(values);
   }, [values, setDraft]);
 
-  return null; 
+  return null;
 }
 
 export default function NoteForm() {
@@ -53,12 +52,17 @@ export default function NoteForm() {
     <Formik<FormValues>
       initialValues={draft}
       validationSchema={validationSchema}
-      onSubmit={(values) => mutation.mutate(values)}
-      enableReinitialize
+      onSubmit={(values, helpers: FormikHelpers<FormValues>) => {
+        mutation.mutate(values, {
+          onSuccess: () => {
+            helpers.resetForm();
+          },
+        });
+      }}
     >
-      {({ isSubmitting }) => (
+      {({ values, isSubmitting }) => (
         <Form className={css.form}>
-          <DraftUpdater />
+          <DraftUpdater values={values} />
 
           <div className={css.formGroup}>
             <label htmlFor="title">Title</label>
@@ -75,7 +79,11 @@ export default function NoteForm() {
               rows={8}
               className={css.textarea}
             />
-            <ErrorMessage name="content" component="span" className={css.error} />
+            <ErrorMessage
+              name="content"
+              component="span"
+              className={css.error}
+            />
           </div>
 
           <div className={css.formGroup}>
@@ -94,7 +102,10 @@ export default function NoteForm() {
             <button
               type="button"
               className={css.cancelButton}
-              onClick={() => router.back()}
+              onClick={() => {
+                clearDraft();
+                router.back();
+              }}
             >
               Cancel
             </button>
