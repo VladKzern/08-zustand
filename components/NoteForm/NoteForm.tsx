@@ -1,6 +1,7 @@
 "use client";
 
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { useEffect } from "react";
+import { Formik, Form, Field, ErrorMessage, useFormikContext } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,10 +24,21 @@ interface FormValues {
   tag: NoteTag;
 }
 
+function DraftUpdater() {
+  const { values } = useFormikContext<FormValues>();
+  const { setDraft } = useNoteStore();
+
+  useEffect(() => {
+    setDraft(values);
+  }, [values, setDraft]);
+
+  return null; 
+}
+
 export default function NoteForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { draft, setDraft, clearDraft } = useNoteStore();
+  const { draft, clearDraft } = useNoteStore();
 
   const mutation = useMutation({
     mutationFn: createNote,
@@ -44,60 +56,58 @@ export default function NoteForm() {
       onSubmit={(values) => mutation.mutate(values)}
       enableReinitialize
     >
-      {({ values, isSubmitting }) => {
-        setDraft(values);
+      {({ isSubmitting }) => (
+        <Form className={css.form}>
+          <DraftUpdater />
 
-        return (
-          <Form className={css.form}>
-            <div className={css.formGroup}>
-              <label htmlFor="title">Title</label>
-              <Field id="title" name="title" type="text" className={css.input} />
-              <ErrorMessage name="title" component="span" className={css.error} />
-            </div>
+          <div className={css.formGroup}>
+            <label htmlFor="title">Title</label>
+            <Field id="title" name="title" type="text" className={css.input} />
+            <ErrorMessage name="title" component="span" className={css.error} />
+          </div>
 
-            <div className={css.formGroup}>
-              <label htmlFor="content">Content</label>
-              <Field
-                id="content"
-                name="content"
-                as="textarea"
-                rows={8}
-                className={css.textarea}
-              />
-              <ErrorMessage name="content" component="span" className={css.error} />
-            </div>
+          <div className={css.formGroup}>
+            <label htmlFor="content">Content</label>
+            <Field
+              id="content"
+              name="content"
+              as="textarea"
+              rows={8}
+              className={css.textarea}
+            />
+            <ErrorMessage name="content" component="span" className={css.error} />
+          </div>
 
-            <div className={css.formGroup}>
-              <label htmlFor="tag">Tag</label>
-              <Field as="select" id="tag" name="tag" className={css.select}>
-                <option value="Todo">Todo</option>
-                <option value="Work">Work</option>
-                <option value="Personal">Personal</option>
-                <option value="Meeting">Meeting</option>
-                <option value="Shopping">Shopping</option>
-              </Field>
-              <ErrorMessage name="tag" component="span" className={css.error} />
-            </div>
+          <div className={css.formGroup}>
+            <label htmlFor="tag">Tag</label>
+            <Field as="select" id="tag" name="tag" className={css.select}>
+              <option value="Todo">Todo</option>
+              <option value="Work">Work</option>
+              <option value="Personal">Personal</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Shopping">Shopping</option>
+            </Field>
+            <ErrorMessage name="tag" component="span" className={css.error} />
+          </div>
 
-            <div className={css.actions}>
-              <button
-                type="button"
-                className={css.cancelButton}
-                onClick={() => router.back()}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className={css.submitButton}
-                disabled={isSubmitting || mutation.isPending}
-              >
-                {mutation.isPending ? "Creating..." : "Create note"}
-              </button>
-            </div>
-          </Form>
-        );
-      }}
+          <div className={css.actions}>
+            <button
+              type="button"
+              className={css.cancelButton}
+              onClick={() => router.back()}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={css.submitButton}
+              disabled={isSubmitting || mutation.isPending}
+            >
+              {mutation.isPending ? "Creating..." : "Create note"}
+            </button>
+          </div>
+        </Form>
+      )}
     </Formik>
   );
 }
