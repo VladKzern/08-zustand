@@ -1,13 +1,12 @@
 "use client";
 
-import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
+import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createNote } from "@/lib/api";
 import { useNoteStore } from "@/lib/store/noteStore";
 import type { NoteTag } from "@/types/note";
-import { useEffect } from "react";
 import css from "./NoteForm.module.css";
 
 const validationSchema = Yup.object({
@@ -18,26 +17,10 @@ const validationSchema = Yup.object({
     .required(),
 });
 
-interface FormValues {
-  title: string;
-  content: string;
-  tag: NoteTag;
-}
-
-function DraftUpdater({ values }: { values: FormValues }) {
-  const { setDraft } = useNoteStore();
-
-  useEffect(() => {
-    setDraft(values);
-  }, [values, setDraft]);
-
-  return null;
-}
-
 export default function NoteForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { draft, clearDraft } = useNoteStore();
+  const { draft, setDraft, clearDraft } = useNoteStore();
 
   const mutation = useMutation({
     mutationFn: createNote,
@@ -49,24 +32,27 @@ export default function NoteForm() {
   });
 
   return (
-    <Formik<FormValues>
+    <Formik
       initialValues={draft}
       validationSchema={validationSchema}
-      onSubmit={(values, helpers: FormikHelpers<FormValues>) => {
-        mutation.mutate(values, {
-          onSuccess: () => {
-            helpers.resetForm();
-          },
-        });
-      }}
+      onSubmit={(values) => mutation.mutate(values)}
+      enableReinitialize
     >
-      {({ values, isSubmitting }) => (
+      {({ values, handleChange, isSubmitting }) => (
         <Form className={css.form}>
-          <DraftUpdater values={values} />
-
           <div className={css.formGroup}>
             <label htmlFor="title">Title</label>
-            <Field id="title" name="title" type="text" className={css.input} />
+            <Field
+              id="title"
+              name="title"
+              type="text"
+              className={css.input}
+              value={values.title}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                handleChange(e);
+                setDraft({ ...values, title: e.target.value });
+              }}
+            />
             <ErrorMessage name="title" component="span" className={css.error} />
           </div>
 
@@ -78,17 +64,28 @@ export default function NoteForm() {
               as="textarea"
               rows={8}
               className={css.textarea}
+              value={values.content}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                handleChange(e);
+                setDraft({ ...values, content: e.target.value }); // намучив..)
+              }}
             />
-            <ErrorMessage
-              name="content"
-              component="span"
-              className={css.error}
-            />
+            <ErrorMessage name="content" component="span" className={css.error} />
           </div>
 
           <div className={css.formGroup}>
             <label htmlFor="tag">Tag</label>
-            <Field as="select" id="tag" name="tag" className={css.select}>
+            <Field
+              as="select"
+              id="tag"
+              name="tag"
+              className={css.select}
+              value={values.tag}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                handleChange(e);
+                setDraft({ ...values, tag: e.target.value as NoteTag });
+              }}
+            >
               <option value="Todo">Todo</option>
               <option value="Work">Work</option>
               <option value="Personal">Personal</option>
@@ -102,10 +99,7 @@ export default function NoteForm() {
             <button
               type="button"
               className={css.cancelButton}
-              onClick={() => {
-                clearDraft();
-                router.back();
-              }}
+              onClick={() => router.back()}
             >
               Cancel
             </button>
